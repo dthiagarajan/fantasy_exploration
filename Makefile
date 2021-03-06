@@ -1,0 +1,2 @@
+write_all_statistics:
+	env PREFECT__FLOWS__CHECKPOINTING=true python3 write_all_statistics.py

@@ -1,0 +1,6 @@
+data/
+.DS_Store
+.ipynb_checkpoints/
+*.ipynb
+league_config.json
+.vscode/
