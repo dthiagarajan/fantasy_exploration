@@ -27,6 +27,5 @@ with Flow(name='Write All Statistics') as flow:
     )
 
 if __name__ == '__main__':
-    # TODO: load league_config.json and put it in the Prefect context
     with prefect.context(league=League.load_league('./league_config.json')):
         final_state = flow.run()
