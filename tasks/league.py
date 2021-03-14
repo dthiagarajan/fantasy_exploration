@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -146,23 +146,48 @@ class League:
 
 
 @task(
-    name='Get League Statistics',
-    target="{date:%m}-{date:%d}-{date:%Y}/league_statistics.prefect",
+    name='Get League Mean Statistics',
+    target="{date:%m}-{date:%d}-{date:%Y}/league_mean_statistics.prefect",
     result=LocalResult(dir='./data'),
     checkpoint=True,
 )
-def get_league_statistics(team_stats: pd.DataFrame) -> pd.DataFrame:
+def get_league_mean_statistics(team_stats: pd.DataFrame) -> pd.DataFrame:
     """Aggregates team aggregated statistics over the whole league.
 
     Args:
         team_stats (pd.DataFrame): multi-indexed dataframe with all teams statistics
 
     Returns:
-        pd.DataFrame: 2D dataframe containing traditional statistics (e.g. PTS, AST) over
+        pd.DataFrame: 2D dataframes containing traditional mean statistics
+            (e.g. PTS, AST) over
             * the last 7 days
             * the last 15 days
             * the last 30 days
             * current year statistics
-            all indexed by according names
+            all indexed by according names.
     """
     return team_stats.groupby(level=1).apply(lambda df: df.mean(axis=0))
+
+
+@task(
+    name='Get League deviation Statistics',
+    target="{date:%m}-{date:%d}-{date:%Y}/league_deviation_statistics.prefect",
+    result=LocalResult(dir='./data'),
+    checkpoint=True,
+)
+def get_league_deviation_statistics(team_stats: pd.DataFrame) -> pd.DataFrame:
+    """Aggregates team aggregated statistics over the whole league.
+
+    Args:
+        team_stats (pd.DataFrame): multi-indexed dataframe with all teams statistics
+
+    Returns:
+        pd.DataFrame: 2D dataframes containing traditional deviation statistics
+            (e.g. PTS, AST) over
+            * the last 7 days
+            * the last 15 days
+            * the last 30 days
+            * current year statistics
+            all indexed by according names, both mean and standard deviation.
+    """
+    return team_stats.groupby(level=1).apply(lambda df: df.std(axis=0))

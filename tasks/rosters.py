@@ -1,8 +1,7 @@
-import json
 from typing import List
 
+import numpy as np
 import pandas as pd
-import requests
 
 import prefect
 from prefect import task
@@ -37,4 +36,49 @@ def parse_roster_statistics(
     """
     return prefect.context.league.get_roster_statistics(
         season=season, teams=teams, player_info=player_info
+    )
+
+
+@task(
+    name='Get Normalized Roster Statistics',
+    target="{date:%m}-{date:%d}-{date:%Y}/normalized_roster_statistics.prefect",
+    result=LocalResult(dir='./data'),
+    checkpoint=True,
+)
+def get_normalized_roster_statistics(
+    teams: List[Team],
+    roster_statistics: pd.DataFrame,
+    league_mean_statistics: pd.DataFrame,
+    league_deviation_statistics: pd.DataFrame,
+) -> pd.DataFrame:
+    """Gets normalized roster statistics using league mean/deviations and z-scores.
+
+    Args:
+        teams (List[Team]): list of teams in the league
+        roster_statistics (pd.DataFrame): statistics for all teams in the league
+        league_mean_statistics (pd.DataFrame): mean statistics for the league
+        league_deviation_statistics (pd.DataFrame): deviation for statistics in the league
+
+    Returns:
+        pd.DataFrame: dataframe of z-scores for all rosters for all statistics for
+            * the last 7 days
+            * the last 15 days
+            * the last 30 days
+            * current year statistics
+            transposed so that the time period and the statistics are on the row-wise index, and the
+            team is on the col-wise index
+    """
+    num_teams = len(teams)
+    normalized_roster_statistics = (
+        np.transpose(roster_statistics.values.reshape((num_teams, -1, 4)), axes=(1, 2, 0))
+        - league_mean_statistics.values[..., None]
+    ) / league_deviation_statistics.values[..., None]
+    return (
+        pd.DataFrame(
+            data=np.transpose(normalized_roster_statistics, axes=(2, 0, 1)).reshape((27 * 12, 4)),
+            index=roster_statistics.index,
+            columns=roster_statistics.columns,
+        )
+        .unstack()
+        .T
     )
