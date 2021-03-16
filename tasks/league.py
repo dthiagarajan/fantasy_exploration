@@ -1,16 +1,19 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
+import prefect
 import requests
+from tqdm import tqdm
 
-from prefect import task
+from prefect import task, Task
 from prefect.engine.results import LocalResult
 
 from .teams import Team
+from analysis import sigmoid
 
 
 @dataclass
@@ -46,13 +49,23 @@ class League:
         filter_unknown_keys=True,
     ) -> Dict[str, float]:
         try:
-            return {
+            readable_stats = {
                 self.stats_map[k]: stats['averageStats'][k]
                 for k in stats['averageStats']
                 if len(self.stats_map[k]) > 0
                 and not ('*' in self.stats_map[k] and filter_redundant_keys)
                 and not ('?' in self.stats_map[k] and filter_unknown_keys)
             }
+            all_stats = [
+                k
+                for k in self.stats_map
+                if len(self.stats_map[k]) > 0
+                and not ('*' in self.stats_map[k] and filter_redundant_keys)
+                and not ('?' in self.stats_map[k] and filter_unknown_keys)
+            ]
+            # Only return if all stats are present
+            return readable_stats if len(readable_stats) == len(all_stats) else None
+
         except KeyError:
             return {
                 k: np.nan
@@ -67,7 +80,7 @@ class League:
             {
                 self.stats_index_map[i]: self._make_readable_stats(stats_info)
                 for i, stats_info in enumerate(stats)
-                if i in self.stats_index_map
+                if i in self.stats_index_map and self._make_readable_stats(stats_info)
             }
         )
 
@@ -98,7 +111,7 @@ class League:
                 for player_info in player_request_info['players']
             },
             axis=0,
-        )
+        ).sort_index(level=0)
 
     def _get_per_roster_stats(self, player_info: pd.DataFrame, roster: List[str]) -> pd.DataFrame:
         roster_stats = (
@@ -110,9 +123,7 @@ class League:
             roster_stats = roster_stats.unstack(level=1)
         return roster_stats
 
-    def get_roster_statistics(
-        self, season: int, teams: List[Team], player_info: pd.DataFrame
-    ) -> pd.DataFrame:
+    def get_team_rosters(self, season: int, teams: List[Team]) -> Dict[str, List[str]]:
         roster_info = requests.get(
             self.url(season=season, views=['mRoster']),
             cookies=self.cookies,
@@ -124,6 +135,11 @@ class League:
             ]
             for team in roster_info['teams']
         }
+        return rosters
+
+    def get_roster_statistics(
+        self, rosters: Dict[str, List[str]], player_info: pd.DataFrame
+    ) -> pd.DataFrame:
         for team in rosters:
             for player in rosters[team]:
                 assert player in player_info.index
@@ -134,6 +150,35 @@ class League:
             },
             axis=0,
         )
+
+    def get_relevance_scores(
+        self, player_stats: pd.DataFrame, roster_stats: pd.DataFrame
+    ) -> pd.DataFrame:
+        num_players = len(player_stats.index.get_level_values(level=1).unique())
+        diffs = np.transpose(
+            sigmoid(player_stats.swaplevel().values).reshape((num_players, -1, 4)), axes=(1, 2, 0)
+        ) - sigmoid(roster_stats.values[..., None])
+        return (
+            pd.DataFrame(
+                data=np.transpose(diffs, axes=(2, 0, 1)).reshape((27 * num_players, 4)),
+                index=player_stats.swaplevel().index,
+                columns=player_stats.swaplevel().columns,
+            )
+            .groupby(level=0)
+            .apply(lambda df: df.sum(axis=0))
+        )
+
+    def get_team_relevance_scores(
+        self,
+        team_rosters: Dict[str, List[str]],
+        player_stats: pd.DataFrame,
+        roster_stats: pd.DataFrame,
+        team_name: str,
+    ) -> pd.DataFrame:
+        team_stats = roster_stats.loc[:, team_name].unstack().T
+        return prefect.context.league.get_relevance_scores(player_stats, team_stats).loc[
+            team_rosters[team_name]
+        ]
 
     def __repr__(self):
         return f'League {self.league_id}'
@@ -191,3 +236,54 @@ def get_league_deviation_statistics(team_stats: pd.DataFrame) -> pd.DataFrame:
             all indexed by according names, both mean and standard deviation.
     """
     return team_stats.groupby(level=1).apply(lambda df: df.std(axis=0))
+
+
+@task(
+    name='Compute All Roster Relevances',
+    target="{date:%m}-{date:%d}-{date:%Y}/team_roster_relevances.prefect",
+    result=LocalResult(dir='./data'),
+    checkpoint=True,
+)
+def compute_team_roster_relevances(
+    team_rosters: Dict[str, List[str]],
+    player_stats: pd.DataFrame,
+    roster_stats: pd.DataFrame,
+):
+    return pd.concat(
+        {
+            team: prefect.context.league.get_team_relevance_scores(
+                team_rosters, player_stats, roster_stats, team
+            )
+            for team in tqdm(team_rosters, desc='Computing Team Roster Relevances', leave=False)
+        }
+    )
+
+
+@task(
+    name='Compute All Trade Relevances',
+    target="{date:%m}-{date:%d}-{date:%Y}/trade_relevances.prefect",
+    result=LocalResult(dir='./data'),
+    checkpoint=True,
+)
+def compute_trade_relevances(
+    team_rosters: Dict[str, List[str]],
+    player_stats: pd.DataFrame,
+    roster_stats: pd.DataFrame,
+) -> pd.DataFrame:
+    team_names = list(team_rosters.keys())
+    all_trade_scores = {}
+    for i in tqdm(range(len(team_names)), desc='Computing Trade Relevances', leave=False):
+        my_team_stats = roster_stats.loc[:, team_names[i]].unstack().T
+        for j in range(i + 1, len(team_names)):
+            their_team_stats = roster_stats.loc[:, team_names[j]].unstack().T
+            all_trade_scores[(team_names[i], team_names[j])] = pd.concat(
+                [
+                    prefect.context.league.get_relevance_scores(player_stats, my_team_stats).loc[
+                        team_rosters[team_names[j]]
+                    ],
+                    prefect.context.league.get_relevance_scores(player_stats, their_team_stats).loc[
+                        team_rosters[team_names[i]]
+                    ],
+                ]
+            )
+    return pd.concat(all_trade_scores)

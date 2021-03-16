@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -11,19 +11,38 @@ from .teams import Team
 
 
 @task(
+    name='Get Team Rosters',
+    target="{date:%m}-{date:%d}-{date:%Y}/team_rosters.prefect",
+    result=LocalResult(dir='./data'),
+    checkpoint=True,
+)
+def get_team_rosters(season: int, teams: List[Team]) -> Dict[str, List[str]]:
+    """Gets rosters for each team using ESPN's fantasy API.
+
+    Args:
+        season (int): the season to get roster statistics for
+        teams (List[Team]): the teams in the league to consider
+
+    Returns:
+        Dict[str, List[str]]: mapping from roster name to roster (list of player names)
+    """
+    return prefect.context.league.get_team_rosters(season=season, teams=teams)
+
+
+@task(
     name='Parse Roster Statistics',
     target="{date:%m}-{date:%d}-{date:%Y}/roster_statistics.prefect",
     result=LocalResult(dir='./data'),
     checkpoint=True,
 )
 def parse_roster_statistics(
-    season: int, teams: List[Team], player_info: pd.DataFrame
+    season: int, rosters: Dict[str, List[str]], player_info: pd.DataFrame
 ) -> pd.DataFrame:
     """Parses roster statistics from a request sent to ESPN's fantasy API.
 
     Args:
         season (int): the season to get roster statistics for
-        teams (List[Team]): the teams in the league to consider
+        rosters (Dict[str, List[str]]): the rosters in the league to consider
         player_info (pd.DataFrame): statistics for all players
 
     Returns:
@@ -34,9 +53,7 @@ def parse_roster_statistics(
             * current year statistics
             all indexed by according names
     """
-    return prefect.context.league.get_roster_statistics(
-        season=season, teams=teams, player_info=player_info
-    )
+    return prefect.context.league.get_roster_statistics(rosters=rosters, player_info=player_info)
 
 
 @task(
