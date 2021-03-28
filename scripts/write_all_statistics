@@ -60,7 +60,20 @@ with Flow(name='Write All Statistics') as flow:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Write all fantasy statistics to file for analysis.')
-    parser.add_argument('--league_config', type=str, default='./league_config.json')
+    parser.add_argument(
+        '--league_config',
+        type=str,
+        default='./league_config.json',
+        help="Config (cookies and similar) for the league to analyze.",
+    )
+    parser.add_argument(
+        '--output_directory',
+        type=str,
+        default='./data/',
+        help="Directory to write all analysis data to.",
+    )
     args = parser.parse_args()
-    with prefect.context(league=League.load_league(args.league_config)):
+    with prefect.context(
+        league=League.load_league(args.league_config), output_directory=args.output_directory
+    ):
         final_state = flow.run()
