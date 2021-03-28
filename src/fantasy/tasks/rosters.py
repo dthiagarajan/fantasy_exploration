@@ -67,6 +67,7 @@ def get_normalized_roster_statistics(
     roster_statistics: pd.DataFrame,
     league_mean_statistics: pd.DataFrame,
     league_deviation_statistics: pd.DataFrame,
+    epsilon=1e-6,
 ) -> pd.DataFrame:
     """Gets normalized roster statistics using league mean/deviations and z-scores.
 
@@ -75,6 +76,7 @@ def get_normalized_roster_statistics(
         roster_statistics (pd.DataFrame): statistics for all teams in the league
         league_mean_statistics (pd.DataFrame): mean statistics for the league
         league_deviation_statistics (pd.DataFrame): deviation for statistics in the league
+        epsilon (float): float to avoid zero division. Defaults to 1e-6.
 
     Returns:
         pd.DataFrame: dataframe of z-scores for all rosters for all statistics for
@@ -89,10 +91,12 @@ def get_normalized_roster_statistics(
     normalized_roster_statistics = (
         np.transpose(roster_statistics.values.reshape((num_teams, -1, 4)), axes=(1, 2, 0))
         - league_mean_statistics.values[..., None]
-    ) / league_deviation_statistics.values[..., None]
+    ) / (league_deviation_statistics.values[..., None] + epsilon)
     return (
         pd.DataFrame(
-            data=np.transpose(normalized_roster_statistics, axes=(2, 0, 1)).reshape((27 * 12, 4)),
+            data=np.transpose(np.nan_to_num(normalized_roster_statistics), axes=(2, 0, 1)).reshape(
+                (27 * 12, 4)
+            ),
             index=roster_statistics.index,
             columns=roster_statistics.columns,
         )

@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
+import argparse
 import prefect
 from prefect import Flow, Parameter
-from prefect.engine.results import LocalResult
 
-from tasks import (
+from fantasy.tasks import (
     League,
     get_league_deviation_statistics,
     get_league_mean_statistics,
@@ -17,6 +18,7 @@ from tasks import (
     compute_team_roster_relevances,
     compute_trade_relevances,
 )
+
 
 with Flow(name='Write All Statistics') as flow:
     season = Parameter(name='season', default=2021)
@@ -57,5 +59,8 @@ with Flow(name='Write All Statistics') as flow:
     )
 
 if __name__ == '__main__':
-    with prefect.context(league=League.load_league('./league_config.json')):
+    parser = argparse.ArgumentParser('Write all fantasy statistics to file for analysis.')
+    parser.add_argument('--league_config', type=str, default='./league_config.json')
+    args = parser.parse_args()
+    with prefect.context(league=League.load_league(args.league_config)):
         final_state = flow.run()

@@ -5,3 +5,6 @@ data/
 league_config.json
 .vscode/
 **/*.pyc
+build/
+dist/
+*.egg-info
