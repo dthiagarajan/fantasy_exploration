@@ -20,7 +20,6 @@ fantasy-analysis==0.0.1
 flake8==3.7.9
 HeapDict==1.0.1
 idna==2.10
-importlib-metadata==3.4.0
 ipykernel==5.3.4
 ipython==7.19.0
 ipython-genutils==0.2.0
