@@ -23,9 +23,9 @@ def display_trade_relevances(team_1: str, team_2: str, trade_relevances: pd.Data
 
 def main(current_date='03-28-2021'):
     st.sidebar.title('Champions League Statistics (2020-21)')
-    team_rosters = load_result('data', current_date, 'team_rosters')
-    team_relevances = load_result('data', current_date, 'team_roster_relevances')
-    trade_relevances = load_result('data', current_date, 'trade_relevances')
+    team_rosters = load_result('visible_data', current_date, 'team_rosters')
+    team_relevances = load_result('visible_data', current_date, 'team_roster_relevances')
+    trade_relevances = load_result('visible_data', current_date, 'trade_relevances')
     team_relevance_app_mode = st.sidebar.selectbox("Team", list(team_rosters.keys()))
     display_team_relevances(team_relevance_app_mode, team_relevances)
     trade_relevance_app_mode = st.sidebar.selectbox("Trade With", list(team_rosters.keys()))
