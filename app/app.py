@@ -1,9 +1,17 @@
 import streamlit as st
 import pandas as pd
+import urllib
 from typing import List
 
 from fantasy.analysis import load_result
 from fantasy.tasks.league import League
+
+
+@st.cache
+def get_file_content_as_string(path):
+    url = 'https://raw.githubusercontent.com/streamlit/demo-self-driving/master/' + path
+    response = urllib.request.urlopen(url)
+    return response.read().decode("utf-8")
 
 
 def display_player_statistics(normalized_player_statistics: pd.DataFrame, category: str):
@@ -91,6 +99,8 @@ def main(current_date='03-28-2021'):
 
     trade_relevance_app_mode = st.sidebar.selectbox("Trade With", list(team_rosters.keys()))
     display_trade_relevances(team_relevance_app_mode, trade_relevance_app_mode, trade_relevances)
+
+    st.code(get_file_content_as_string("app/app.py"))
 
 
 if __name__ == "__main__":
