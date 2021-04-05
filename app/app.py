@@ -9,7 +9,7 @@ from fantasy.tasks.league import League
 
 @st.cache
 def get_file_content_as_string(path):
-    url = 'https://raw.githubusercontent.com/dthiagarajan/fantasy-exploration/master/' + path
+    url = 'https://raw.githubusercontent.com/dthiagarajan/fantasy_exploration/master/' + path
     response = urllib.request.urlopen(url)
     return response.read().decode("utf-8")
 
