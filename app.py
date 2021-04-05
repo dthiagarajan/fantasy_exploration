@@ -6,6 +6,10 @@ from fantasy.analysis import load_result
 
 def display_team_relevances(team_name: str, team_relevances: pd.DataFrame):
     st.markdown(f'**Team Roster Relevances**: {team_name}')
+    st.markdown(
+        'This is a list of player relevances, computed roughly by assessing how important a player '
+        'is relative to each category.'
+    )
     st.dataframe(data=team_relevances.loc[team_name], width=800)
 
 
@@ -18,6 +22,10 @@ def display_trade_relevances(team_1: str, team_2: str, trade_relevances: pd.Data
         st.markdown('Please select a different team to trade with.')
     else:
         st.markdown(f'**Trade Relevances With**: {team_2}')
+        st.markdown(
+            'This is a list of the most relevant players between the two teams when '
+            'considering how they would impact the other teams category scores.'
+        )
         st.dataframe(data=trade_relevances.loc[ordering], width=800)
 
 
