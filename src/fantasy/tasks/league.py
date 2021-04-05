@@ -151,8 +151,9 @@ class League:
             axis=0,
         )
 
+    @staticmethod
     def get_relevance_scores(
-        self, player_stats: pd.DataFrame, roster_stats: pd.DataFrame
+        player_stats: pd.DataFrame, roster_stats: pd.DataFrame
     ) -> pd.DataFrame:
         num_players = len(player_stats.index.get_level_values(level=1).unique())
         diffs = np.transpose(

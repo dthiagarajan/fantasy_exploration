@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
+from typing import List
 
 from fantasy.analysis import load_result
+from fantasy.tasks.league import League
 
 
 def display_player_statistics(normalized_player_statistics: pd.DataFrame, category: str):
@@ -16,6 +18,34 @@ def display_team_relevances(team_name: str, team_relevances: pd.DataFrame):
         'is relative to each category.'
     )
     st.dataframe(data=team_relevances.loc[team_name], width=800)
+
+
+def display_rostered_and_unrostered_relevances(
+    team_name: str,
+    rostered_players: List[str],
+    normalized_player_statistics: pd.DataFrame,
+    normalized_roster_statistics: pd.DataFrame,
+):
+    rostered_normalized_player_statistics = normalized_player_statistics[
+        normalized_player_statistics.index.isin(rostered_players, level=1)
+    ]
+    unrostered_normalized_player_statistics = normalized_player_statistics[
+        ~normalized_player_statistics.index.isin(rostered_players, level=1)
+    ]
+    st.markdown(f'**Rostered Player Relevances**: for {team_name}')
+    st.markdown(f'Most relevant player on rosters for {team_name}.')
+    rostered_relevance_scores = League.get_relevance_scores(
+        rostered_normalized_player_statistics,
+        normalized_roster_statistics.loc[:, team_name].unstack().T,
+    )
+    st.dataframe(data=rostered_relevance_scores, width=800)
+    st.markdown(f'**Unrostered Player Relevances**: for {team_name}')
+    st.markdown(f'Most relevant player not on rosters for {team_name}.')
+    unrostered_relevance_scores = League.get_relevance_scores(
+        unrostered_normalized_player_statistics,
+        normalized_roster_statistics.loc[:, team_name].unstack().T,
+    )
+    st.dataframe(data=unrostered_relevance_scores, width=800)
 
 
 def display_trade_relevances(team_1: str, team_2: str, trade_relevances: pd.DataFrame):
@@ -40,6 +70,9 @@ def main(current_date='03-28-2021'):
     normalized_player_statistics = load_result(
         'visible_data', current_date, 'normalized_player_statistics'
     )
+    normalized_roster_statistics = load_result(
+        'visible_data', current_date, 'normalized_roster_statistics'
+    )
     categories = normalized_player_statistics.index.get_level_values(0).unique()
     category_app_mode = st.sidebar.selectbox("Category (First Display)", list(categories))
     display_player_statistics(normalized_player_statistics, category_app_mode)
@@ -47,6 +80,15 @@ def main(current_date='03-28-2021'):
     trade_relevances = load_result('visible_data', current_date, 'trade_relevances')
     team_relevance_app_mode = st.sidebar.selectbox("Team", list(team_rosters.keys()))
     display_team_relevances(team_relevance_app_mode, team_relevances)
+
+    rostered_players = sorted([player for roster in team_rosters.values() for player in roster])
+    display_rostered_and_unrostered_relevances(
+        team_relevance_app_mode,
+        rostered_players,
+        normalized_player_statistics,
+        normalized_roster_statistics,
+    )
+
     trade_relevance_app_mode = st.sidebar.selectbox("Trade With", list(team_rosters.keys()))
     display_trade_relevances(team_relevance_app_mode, trade_relevance_app_mode, trade_relevances)
 
