@@ -23,8 +23,7 @@ class Team:
 
 @task(
     name='Retrieve Fantasy Teams',
-    target="{date:%Y}/teams.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(location="{output_directory}/{date:%Y}/teams.prefect"),
     checkpoint=True,
 )
 def get_teams(season: int) -> List[Team]:

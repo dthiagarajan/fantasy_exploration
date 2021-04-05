@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
+"""Script to write out all statistics to analyze for a given roster and league.
+
+Usage:
+    env PREFECT__FLOWS__CHECKPOINTING=true write_all_statistics \
+        --league_config <path to league config JSON file> \
+        --output_directory <output directory for data>
+"""
 import argparse
+import os
 import prefect
 from prefect import Flow, Parameter
 
@@ -73,7 +81,10 @@ if __name__ == '__main__':
         help="Directory to write all analysis data to.",
     )
     args = parser.parse_args()
+    absolute_output_directory = os.path.abspath(args.output_directory)
+    print(f'Writing results to {absolute_output_directory}.')
+    prefect.config.flows.checkpointing = True
     with prefect.context(
-        league=League.load_league(args.league_config), output_directory=args.output_directory
+        league=League.load_league(args.league_config), output_directory=absolute_output_directory
     ):
         final_state = flow.run()

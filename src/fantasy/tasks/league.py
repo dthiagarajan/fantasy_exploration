@@ -192,8 +192,9 @@ class League:
 
 @task(
     name='Get League Mean Statistics',
-    target="{date:%m}-{date:%d}-{date:%Y}/league_mean_statistics.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(
+        location="{output_directory}/{date:%m}-{date:%d}-{date:%Y}/league_mean_statistics.prefect"
+    ),
     checkpoint=True,
 )
 def get_league_mean_statistics(team_stats: pd.DataFrame) -> pd.DataFrame:
@@ -216,8 +217,9 @@ def get_league_mean_statistics(team_stats: pd.DataFrame) -> pd.DataFrame:
 
 @task(
     name='Get League deviation Statistics',
-    target="{date:%m}-{date:%d}-{date:%Y}/league_deviation_statistics.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(
+        location="{output_directory}/{date:%m}-{date:%d}-{date:%Y}/league_deviation_statistics.prefect"
+    ),
     checkpoint=True,
 )
 def get_league_deviation_statistics(team_stats: pd.DataFrame) -> pd.DataFrame:
@@ -240,8 +242,9 @@ def get_league_deviation_statistics(team_stats: pd.DataFrame) -> pd.DataFrame:
 
 @task(
     name='Compute All Roster Relevances',
-    target="{date:%m}-{date:%d}-{date:%Y}/team_roster_relevances.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(
+        location="{output_directory}/{date:%m}-{date:%d}-{date:%Y}/team_roster_relevances.prefect"
+    ),
     checkpoint=True,
 )
 def compute_team_roster_relevances(
@@ -261,8 +264,9 @@ def compute_team_roster_relevances(
 
 @task(
     name='Compute All Trade Relevances',
-    target="{date:%m}-{date:%d}-{date:%Y}/trade_relevances.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(
+        location="{output_directory}/{date:%m}-{date:%d}-{date:%Y}/trade_relevances.prefect"
+    ),
     checkpoint=True,
 )
 def compute_trade_relevances(

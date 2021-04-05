@@ -12,8 +12,9 @@ from .teams import Team
 
 @task(
     name='Get Team Rosters',
-    target="{date:%m}-{date:%d}-{date:%Y}/team_rosters.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(
+        location="{output_directory}/{date:%m}-{date:%d}-{date:%Y}/team_rosters.prefect"
+    ),
     checkpoint=True,
 )
 def get_team_rosters(season: int, teams: List[Team]) -> Dict[str, List[str]]:
@@ -31,8 +32,9 @@ def get_team_rosters(season: int, teams: List[Team]) -> Dict[str, List[str]]:
 
 @task(
     name='Parse Roster Statistics',
-    target="{date:%m}-{date:%d}-{date:%Y}/roster_statistics.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(
+        location="{output_directory}/{date:%m}-{date:%d}-{date:%Y}/roster_statistics.prefect"
+    ),
     checkpoint=True,
 )
 def parse_roster_statistics(
@@ -58,8 +60,9 @@ def parse_roster_statistics(
 
 @task(
     name='Get Normalized Roster Statistics',
-    target="{date:%m}-{date:%d}-{date:%Y}/normalized_roster_statistics.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(
+        location="{output_directory}/{date:%m}-{date:%d}-{date:%Y}/normalized_roster_statistics.prefect"
+    ),
     checkpoint=True,
 )
 def get_normalized_roster_statistics(

@@ -11,8 +11,9 @@ from .teams import Team
 
 @task(
     name='Parse Player Statistics',
-    target="{date:%m}-{date:%d}-{date:%Y}/player_statistics.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(
+        location="{output_directory}/{date:%m}-{date:%d}-{date:%Y}/player_statistics.prefect"
+    ),
     checkpoint=True,
 )
 def parse_player_statistics(season: int) -> pd.DataFrame:
@@ -34,8 +35,9 @@ def parse_player_statistics(season: int) -> pd.DataFrame:
 
 @task(
     name='Get Player Mean Statistics',
-    target="{date:%m}-{date:%d}-{date:%Y}/player_mean_statistics.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(
+        location="{output_directory}/{date:%m}-{date:%d}-{date:%Y}/player_mean_statistics.prefect"
+    ),
     checkpoint=True,
 )
 def get_player_mean_statistics(player_stats: pd.DataFrame) -> pd.DataFrame:
@@ -60,8 +62,9 @@ def get_player_mean_statistics(player_stats: pd.DataFrame) -> pd.DataFrame:
 
 @task(
     name='Get Player Deviation Statistics',
-    target="{date:%m}-{date:%d}-{date:%Y}/player_deviation_statistics.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(
+        location="{output_directory}/{date:%m}-{date:%d}-{date:%Y}/player_deviation_statistics.prefect"
+    ),
     checkpoint=True,
 )
 def get_player_deviation_statistics(player_stats: pd.DataFrame) -> pd.DataFrame:
@@ -86,8 +89,9 @@ def get_player_deviation_statistics(player_stats: pd.DataFrame) -> pd.DataFrame:
 
 @task(
     name='Get Normalized Player Statistics',
-    target="{date:%m}-{date:%d}-{date:%Y}/normalized_player_statistics.prefect",
-    result=LocalResult(dir="{output_directory}"),
+    result=LocalResult(
+        location="{output_directory}/{date:%m}-{date:%d}-{date:%Y}/normalized_player_statistics.prefect"
+    ),
     checkpoint=True,
 )
 def get_normalized_player_statistics(
