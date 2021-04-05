@@ -9,7 +9,7 @@ import prefect
 import requests
 from tqdm import tqdm
 
-from prefect import task, Task
+from prefect import task
 from prefect.engine.results import LocalResult
 
 from .teams import Team
