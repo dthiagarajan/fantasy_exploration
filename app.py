@@ -4,9 +4,9 @@ import pandas as pd
 from fantasy.analysis import load_result
 
 
-def display_player_statistics(normalized_player_statistics: pd.DataFrame):
-    st.markdown('**Normalized Player Statistics**')
-    st.dataframe(data=normalized_player_statistics, width=800)
+def display_player_statistics(normalized_player_statistics: pd.DataFrame, category: str):
+    st.markdown(f'**Normalized Player {category} Statistics**')
+    st.dataframe(data=normalized_player_statistics.loc[category], width=800)
 
 
 def display_team_relevances(team_name: str, team_relevances: pd.DataFrame):
@@ -40,7 +40,9 @@ def main(current_date='03-28-2021'):
     normalized_player_statistics = load_result(
         'visible_data', current_date, 'normalized_player_statistics'
     )
-    display_player_statistics(normalized_player_statistics)
+    categories = normalized_player_stats.index.get_level_values(0).unique()
+    category_app_mode = st.sidebar.selectbox("Category (First Display)", list(categories))
+    display_player_statistics(normalized_player_statistics, category_app_mode)
     team_relevances = load_result('visible_data', current_date, 'team_roster_relevances')
     trade_relevances = load_result('visible_data', current_date, 'trade_relevances')
     team_relevance_app_mode = st.sidebar.selectbox("Team", list(team_rosters.keys()))
