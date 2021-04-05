@@ -40,7 +40,7 @@ def main(current_date='03-28-2021'):
     normalized_player_statistics = load_result(
         'visible_data', current_date, 'normalized_player_statistics'
     )
-    categories = normalized_player_stats.index.get_level_values(0).unique()
+    categories = normalized_player_statistics.index.get_level_values(0).unique()
     category_app_mode = st.sidebar.selectbox("Category (First Display)", list(categories))
     display_player_statistics(normalized_player_statistics, category_app_mode)
     team_relevances = load_result('visible_data', current_date, 'team_roster_relevances')
