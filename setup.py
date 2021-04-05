@@ -34,7 +34,7 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     zip_safe=False,
-    install_requires=read_lines(Path("requirements.txt")),
+    install_requires=read_lines(Path("requirements_install.txt")),
     scripts=['scripts/write_all_statistics'],
     classifiers=[
         'Programming Language :: Python :: 3 :: Only',
